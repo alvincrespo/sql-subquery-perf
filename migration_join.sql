@@ -1,5 +1,5 @@
 -- Drop database
-DROP DATABASE library_join;
+DROP DATABASE IF EXISTS library_join;
 
 -- Create the database
 CREATE DATABASE library_join;
@@ -38,172 +38,179 @@ ANALYZE TABLE books;
 -- Create stored procedure for subquery query
 DROP PROCEDURE IF EXISTS measure_subquery_query_performance;
 
-DELIMITER $ $ CREATE PROCEDURE measure_subquery_query_performance() BEGIN DECLARE start_time BIGINT;
+DELIMITER $$
 
-DECLARE end_time BIGINT;
+CREATE PROCEDURE measure_subquery_query_performance()
+BEGIN
+  DECLARE start_time BIGINT;
+  DECLARE end_time BIGINT;
+  DECLARE total_time BIGINT DEFAULT 0;
+  DECLARE run_count INT DEFAULT 5;
+  DECLARE i INT DEFAULT 0;
 
-DECLARE total_time BIGINT DEFAULT 0;
+  WHILE i < run_count DO
+  SET
+    start_time = (
+      SELECT
+        UNIX_TIMESTAMP(NOW(3)) * 1000
+    );
 
-DECLARE run_count INT DEFAULT 5;
+  -- Start time in milliseconds
+  -- Your query goes here
+  SELECT
+    *
+  FROM
+    books
+  WHERE
+    author_id NOT IN(
+      SELECT
+        author_id
+      FROM
+        authors
+      WHERE
+        nationality != "Georgia"
+    );
 
-DECLARE i INT DEFAULT 0;
+  SET
+    end_time = (
+      SELECT
+        UNIX_TIMESTAMP(NOW(3)) * 1000
+    );
 
-WHILE i < run_count DO
-SET
-  start_time = (
-    SELECT
-      UNIX_TIMESTAMP(NOW(3)) * 1000
-  );
+  -- End time in milliseconds
+  SET
+    total_time = total_time + (end_time - start_time);
 
--- Start time in milliseconds
--- Your query goes here
-SELECT
-  *
-FROM
-  books
-WHERE
-  author_id NOT IN(
-    SELECT
-      author_id
-    FROM
-      authors
-    WHERE
-      nationality != "Georgia"
-  );
+  -- Accumulate time
+  SET
+    i = i + 1;
 
-SET
-  end_time = (
-    SELECT
-      UNIX_TIMESTAMP(NOW(3)) * 1000
-  );
+  END WHILE;
 
--- End time in milliseconds
-SET
-  total_time = total_time + (end_time - start_time);
-
--- Accumulate time
-SET
-  i = i + 1;
-
-END WHILE;
-
-SELECT
-  total_time / run_count AS average_execution_time_ms;
+  SELECT
+    total_time / run_count AS average_execution_time_ms;
 
 -- Average execution time in milliseconds
-END $ $ -- Create stored procedure for inner join query
+END $$ -- Create stored procedure for inner join query
+
+DELIMITER ;
+
 DROP PROCEDURE IF EXISTS measure_join_query_performance;
 
-CREATE PROCEDURE measure_join_query_performance() BEGIN DECLARE start_time BIGINT;
+DELIMITER $$
 
-DECLARE end_time BIGINT;
+CREATE PROCEDURE measure_join_query_performance()
+BEGIN
+  DECLARE start_time BIGINT;
+  DECLARE end_time BIGINT;
+  DECLARE total_time BIGINT DEFAULT 0;
+  DECLARE run_count INT DEFAULT 5;
+  DECLARE i INT DEFAULT 0;
 
-DECLARE total_time BIGINT DEFAULT 0;
+  WHILE i < run_count DO
+  SET
+    start_time = (
+      SELECT
+        UNIX_TIMESTAMP(NOW(3)) * 1000
+    );
 
-DECLARE run_count INT DEFAULT 5;
+  -- Start time in milliseconds
+  -- Your query goes here
+  SELECT
+    books.*
+  FROM
+    books
+    LEFT JOIN (
+      SELECT
+        author_id
+      FROM
+        authors
+      WHERE
+        nationality != 'Georgia'
+    ) AS filtered_authors ON books.author_id = filtered_authors.author_id
+  WHERE
+    filtered_authors.author_id IS NULL;
 
-DECLARE i INT DEFAULT 0;
+  SET
+    end_time = (
+      SELECT
+        UNIX_TIMESTAMP(NOW(3)) * 1000
+    );
 
-WHILE i < run_count DO
-SET
-  start_time = (
-    SELECT
-      UNIX_TIMESTAMP(NOW(3)) * 1000
-  );
+  -- End time in milliseconds
+  SET
+    total_time = total_time + (end_time - start_time);
 
--- Start time in milliseconds
--- Your query goes here
-SELECT
-  books.*
-FROM
-  books
-  LEFT JOIN (
-    SELECT
-      author_id
-    FROM
-      authors
-    WHERE
-      nationality != 'Georgia'
-  ) AS filtered_authors ON books.author_id = filtered_authors.author_id
-WHERE
-  filtered_authors.author_id IS NULL;
+  -- Accumulate time
+  SET
+    i = i + 1;
 
-SET
-  end_time = (
-    SELECT
-      UNIX_TIMESTAMP(NOW(3)) * 1000
-  );
+  END WHILE;
 
--- End time in milliseconds
-SET
-  total_time = total_time + (end_time - start_time);
-
--- Accumulate time
-SET
-  i = i + 1;
-
-END WHILE;
-
-SELECT
-  total_time / run_count AS average_execution_time_ms;
+  SELECT
+    total_time / run_count AS average_execution_time_ms;
 
 -- Average execution time in milliseconds
-END $ $ -- Create stored procedure for exists query
+END $$ -- Create stored procedure for exists query
+
+DELIMITER ;
+
 DROP PROCEDURE IF EXISTS measure_exists_query_performance;
 
-CREATE PROCEDURE measure_exists_query_performance() BEGIN DECLARE start_time BIGINT;
+DELIMITER $$
 
-DECLARE end_time BIGINT;
+CREATE PROCEDURE measure_exists_query_performance()
+BEGIN
+  DECLARE start_time BIGINT;
+  DECLARE end_time BIGINT;
+  DECLARE total_time BIGINT DEFAULT 0;
+  DECLARE run_count INT DEFAULT 5;
+  DECLARE i INT DEFAULT 0;
 
-DECLARE total_time BIGINT DEFAULT 0;
+  WHILE i < run_count DO
+  SET
+    start_time = (
+      SELECT
+        UNIX_TIMESTAMP(NOW(3)) * 1000
+    );
 
-DECLARE run_count INT DEFAULT 5;
+  -- Start time in milliseconds
+  -- Your query goes here
+  SELECT
+    *
+  FROM
+    books
+  WHERE
+    NOT EXISTS (
+      SELECT
+        1
+      FROM
+        authors
+      WHERE
+        authors.author_id = books.author_id
+        AND authors.nationality != 'Georgia'
+    );
 
-DECLARE i INT DEFAULT 0;
+  SET
+    end_time = (
+      SELECT
+        UNIX_TIMESTAMP(NOW(3)) * 1000
+    );
 
-WHILE i < run_count DO
-SET
-  start_time = (
-    SELECT
-      UNIX_TIMESTAMP(NOW(3)) * 1000
-  );
+  -- End time in milliseconds
+  SET
+    total_time = total_time + (end_time - start_time);
 
--- Start time in milliseconds
--- Your query goes here
-SELECT
-  *
-FROM
-  books
-WHERE
-  NOT EXISTS (
-    SELECT
-      1
-    FROM
-      authors
-    WHERE
-      authors.author_id = books.author_id
-      AND authors.nationality != 'Georgia'
-  );
+  -- Accumulate time
+  SET
+    i = i + 1;
 
-SET
-  end_time = (
-    SELECT
-      UNIX_TIMESTAMP(NOW(3)) * 1000
-  );
+  END WHILE;
 
--- End time in milliseconds
-SET
-  total_time = total_time + (end_time - start_time);
-
--- Accumulate time
-SET
-  i = i + 1;
-
-END WHILE;
-
-SELECT
-  total_time / run_count AS average_execution_time_ms;
+  SELECT
+    total_time / run_count AS average_execution_time_ms;
 
 -- Average execution time in milliseconds
-END $ $ -- Reset Delimiter
-DELIMITER;
+END $$ -- Reset Delimiter
+
+DELIMITER ;

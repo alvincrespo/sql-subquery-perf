@@ -2,65 +2,62 @@
 
 SQL performance monitoring for conditional subquery v. inner join sub query v. exists sub query
 
-## Table of Contents
-
-- [Getting Started](#getting-started)
-  - [Database + Database Client Setup](#database--database-client-setup)
-    - [Pull MySQL Image](#pull-mysql-image)
-    - [Start the MySQL Database Container](#start-the-mysql-database-container)
-    - [Start the MySQL Client Container](#start-the-mysql-client-container)
-  - [Running Migrations](#running-migrations)
-    - [Create library database](#create-library-database)
-
-## Getting Started
-
-### Dababase + Databse Client Setup
-
-#### Pull MySQL Image
+## Setup + Installation
 
 ```sh
-docker pull mysql:8.4.1
+./bin/setup
 ```
 
-#### Start the MySQL Database Container
+Run the above script and it will automate the setup installation. If you prefer
+to know the magic sauce, you can check out the [setup guide here](./SETUP.md).
+
+A successful script run will look like this:
 
 ```sh
-docker run --name my-mysql-container -e MYSQL_ROOT_PASSWORD=my-secret-pw -p 3306:3306 --restart unless-stopped -d mysql:8.4.1
+./bin/setup
+Installing MySQL
+8.4.1: Pulling from library/mysql
+c72f53f7235b: Pull complete
+c7e4ed755af2: Pull complete
+6c8c802f90bc: Pull complete
+eecc55f854cd: Pull complete
+cc8dabc09813: Pull complete
+9aac7d685a2a: Pull complete
+a41e3581bc15: Pull complete
+575080e22a6f: Pull complete
+a4d1cfd20590: Pull complete
+8402c954594c: Pull complete
+Digest: sha256:a7dc4a4e07a9c5d53c0cf36b5b4e8a1b3bb677cb0d544256a0581114a93ddf0f
+Status: Downloaded newer image for mysql:8.4.1
+docker.io/library/mysql:8.4.1
+
+What's next:
+    View a summary of image vulnerabilities and recommendations → docker scout quickview mysql:8.4.1
+MySQL installed.
+
+9fcb16fa38f6b6c95869d67c7a8ea7c37f56ff9cb78c7e831b51164b1a14625d
+Waiting for my-mysql-container to start...
+my-mysql-container started.
+
+Running library database migration.
+Successfully copied 5.63kB to my-mysql-container:/migration.sql
+mysql: [Warning] Using a password on the command line interface can be insecure.
+Library database migrated.
+
+Running library (join) database migration.
+Successfully copied 5.63kB to my-mysql-container:/migration_join.sql
+mysql: [Warning] Using a password on the command line interface can be insecure.
+Table   Op      Msg_type        Msg_text
+library_join.authors    analyze status  OK
+Table   Op      Msg_type        Msg_text
+library_join.books      analyze status  OK
+Library (join) database migrated.
+
+Seeding library database.
+Inserted 1000 authors and 1000000 books.
+Library database seeded.
+
+Seeding library (join) database.
+Inserted 1000 authors and 1000000 books.
+Library (join) database seeded.
 ```
-
-#### Start the MySQL Client Container
-
-```sh
-docker run -it --rm mysql:8.4.1 mysql -hhost.docker.internal -uroot -p
-```
-
-### Running Migrations
-
-There are two databases to run.
-
-#### Create library database
-
-```sh
-docker cp migration.sql my-mysql-container:/migration.sql && docker exec -i my-mysql-container sh -c 'exec mysql -uroot -p"my-secret-pw" -e "source /migration.sql"'
-```
-
-#### Create library_join database
-
-```sh
-docker cp migration.sql my-mysql-container:/migration_join.sql && docker exec -i my-mysql-container sh -c 'exec mysql -uroot -p"my-secret-pw" -e "source /migration_join.sql"'
-```
-
-### Seeding Data
-
-#### Populate library database
-```sh
-python script.py
-```
-
-#### Populate library_join database
-
-```sh
-python script_join.py
-```
-
-Congrats! You're all set up to use the query provided in the runner SQL files.

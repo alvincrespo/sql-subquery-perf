@@ -1,0 +1,58 @@
+#!/bin/bash
+
+# This script automates the setup for this project; installing
+# the mysql image, starting the database and client containers,
+# migrating data and ultimately seeding the databases.
+#
+# Usage: ./bin/setup
+#
+# Dependencies:
+#   - docker
+#   - python
+
+# Set environment variable MYSQL_ROOT_PASSWORD
+MYSQL_ROOT_PASSWORD=my-secret-pw
+
+# Pull docker image
+echo -e "Installing MySQL"
+docker pull mysql:8.4.1
+echo -e "MySQL installed. \n"
+
+# Start the MySQL DB container
+docker run \
+  --name my-mysql-container \
+  --restart unless-stopped \
+  -e MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD \
+  -p 3306:3306 \
+  -d mysql:8.4.1
+
+# Run the MySQL client container
+# docker run -it --rm mysql:8.4.1 mysql -hhost.docker.internal -uroot -p"my-secret-pw"
+
+# Wait for my-mysql-container to start
+echo -e "Waiting for my-mysql-container to start..."
+until docker exec my-mysql-container mysqladmin ping -uroot -p$MYSQL_ROOT_PASSWORD &>/dev/null; do
+  sleep 1
+done
+echo -e "my-mysql-container started. \n"
+
+# Create library database
+echo -e "Running library database migration."
+docker cp migration.sql my-mysql-container:/migration.sql && \
+docker exec -i my-mysql-container sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "source /migration.sql"'
+echo -e "Library database migrated. \n"
+
+# Create join specific library database
+echo -e "Running library (join) database migration."
+docker cp migration_join.sql my-mysql-container:/migration_join.sql && \
+docker exec -i my-mysql-container sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "source /migration_join.sql"'
+echo -e "Library (join) database migrated. \n"
+
+# Seed data
+echo -e "Seeding library database."
+python script.py
+echo -e "Library database seeded. \n"
+
+echo -e "Seeding library (join) database."
+python script_join.py
+echo -e "Library (join) database seeded."
